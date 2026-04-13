@@ -15,6 +15,7 @@ export default function SaleForm() {
   const [medicines, setMedicines] = useState([]);
   
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedPrescriptionId, setSelectedPrescriptionId] = useState("");
   const [items, setItems] = useState([
     { medicine_id: "", quantity: 1, unit_price: 0, subtotal: 0, max_stock: 0 }
   ]);
@@ -30,6 +31,17 @@ export default function SaleForm() {
         ]);
         setCustomers(custRes.data.map(c => ({ label: c.customer_name, value: c.customer_id })));
         setMedicines(medRes.data);
+
+        const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+        const customerIdFromQuery = params?.get("customer_id");
+        const prescriptionIdFromQuery = params?.get("prescription_id");
+
+        if (customerIdFromQuery) {
+          setSelectedCustomerId(customerIdFromQuery);
+        }
+        if (prescriptionIdFromQuery) {
+          setSelectedPrescriptionId(prescriptionIdFromQuery);
+        }
       } catch (err) {
         toast.error("Error loading sales data");
       }
@@ -82,6 +94,7 @@ export default function SaleForm() {
     try {
       const saleData = {
         customer_id: selectedCustomerId,
+        prescription_id: selectedPrescriptionId || null,
         total_amount: finalTotal,
         discount: discount,
         paid_amount: finalTotal, // Simple version: assuming full payment
@@ -97,7 +110,7 @@ export default function SaleForm() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Error processing sale");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 

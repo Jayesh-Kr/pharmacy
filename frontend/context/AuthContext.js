@@ -20,15 +20,23 @@ export const AuthProvider = ({ children }) => {
 
       if (storedToken && storedUser) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch {
+          // Reset malformed persisted user payload.
+          localStorage.removeItem('user');
+          setUser(null);
+        }
         
         // Verify current token with backend
         try {
-          const res = await axiosInstance.get('/auth/me');
+          const res = await axiosInstance.get('/auth/me', { skipAuthRedirect: true });
           setUser(res.data);
           localStorage.setItem('user', JSON.stringify(res.data));
         } catch (err) {
-          console.error('Failed to verify session:', err);
+          if (err.response?.status !== 401) {
+            console.error('Failed to verify session:', err);
+          }
           logout();
         }
       }

@@ -5,6 +5,7 @@ import DashboardContainer from "@/components/layout/DashboardContainer";
 import Table from "@/components/ui/Table";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import { Input, Select } from "@/components/ui/Input";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Users, Shield, UserCheck, UserX } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -17,6 +18,15 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    username: "",
+    password: "",
+    full_name: "",
+    role: "cashier",
+    email: ""
+  });
 
   useEffect(() => {
     if (currentUser && currentUser.role !== 'admin') {
@@ -52,6 +62,22 @@ export default function UsersPage() {
      } catch (err) {
         toast.error("failed to update user status");
      }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await axiosInstance.post('/users', createForm);
+      toast.success('User created successfully');
+      setShowCreateForm(false);
+      setCreateForm({ username: '', password: '', full_name: '', role: 'cashier', email: '' });
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create user');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filteredUsers = users.filter(u => 
@@ -126,8 +152,34 @@ export default function UsersPage() {
           </h1>
           <p className="text-gray-500 mt-1">Control system access and user permissions</p>
         </div>
-        <Button variant="primary" icon={Plus} size="md">Create Staff User</Button>
+        <Button variant="primary" icon={Plus} size="md" onClick={() => setShowCreateForm(true)}>Create Staff User</Button>
       </div>
+
+      {showCreateForm && (
+        <form onSubmit={handleCreateUser} className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-lg font-bold text-gray-900">Create Staff User</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input label="Full Name *" value={createForm.full_name} onChange={(e) => setCreateForm((prev) => ({ ...prev, full_name: e.target.value }))} required />
+            <Input label="Username *" value={createForm.username} onChange={(e) => setCreateForm((prev) => ({ ...prev, username: e.target.value }))} required />
+            <Input label="Password *" type="password" value={createForm.password} onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))} required />
+            <Input label="Email" type="email" value={createForm.email} onChange={(e) => setCreateForm((prev) => ({ ...prev, email: e.target.value }))} />
+            <Select
+              label="Role"
+              value={createForm.role}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, role: e.target.value }))}
+              options={[
+                { label: 'Admin', value: 'admin' },
+                { label: 'Pharmacist', value: 'pharmacist' },
+                { label: 'Cashier', value: 'cashier' }
+              ]}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="submit" variant="primary" loading={saving}>Create</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
 
       <div className="mb-6 relative group max-w-md">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">

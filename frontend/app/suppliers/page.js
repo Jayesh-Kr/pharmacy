@@ -11,9 +11,22 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 
 export default function SuppliersPage() {
+  const emptyForm = {
+    supplier_name: "",
+    contact_person: "",
+    phone: "",
+    email: "",
+    city: "",
+    address: ""
+  };
+
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState(emptyForm);
 
   const fetchSuppliers = async () => {
     setLoading(true);
@@ -30,6 +43,47 @@ export default function SuppliersPage() {
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  const openCreate = () => {
+    setEditingId(null);
+    setFormData(emptyForm);
+    setShowForm(true);
+  };
+
+  const openEdit = (row) => {
+    setEditingId(row.supplier_id);
+    setFormData({
+      supplier_name: row.supplier_name || "",
+      contact_person: row.contact_person || "",
+      phone: row.phone || "",
+      email: row.email || "",
+      city: row.city || "",
+      address: row.address || ""
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingId) {
+        await axiosInstance.put(`/suppliers/${editingId}`, formData);
+        toast.success("Supplier updated");
+      } else {
+        await axiosInstance.post("/suppliers", formData);
+        toast.success("Supplier added");
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setFormData(emptyForm);
+      fetchSuppliers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save supplier");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const filteredSuppliers = suppliers.filter(s => 
     s.supplier_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,7 +132,7 @@ export default function SuppliersPage() {
       className: "text-right",
       accessor: (row) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="secondary" size="sm">Edit</Button>
+          <Button variant="secondary" size="sm" onClick={() => openEdit(row)}>Edit</Button>
         </div>
       )
     }
@@ -94,8 +148,26 @@ export default function SuppliersPage() {
           </h1>
           <p className="text-gray-500 mt-1">Manage your medical supply chain partners</p>
         </div>
-        <Button variant="primary" icon={Plus} size="md">Add Supplier</Button>
+        <Button variant="primary" icon={Plus} size="md" onClick={openCreate}>Add Supplier</Button>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleSave} className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-lg font-bold text-gray-900">{editingId ? "Edit Supplier" : "Add New Supplier"}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input id="supplier_name" label="Supplier Name *" value={formData.supplier_name} onChange={(e) => setFormData((prev) => ({ ...prev, supplier_name: e.target.value }))} required />
+            <Input id="contact_person" label="Contact Person" value={formData.contact_person} onChange={(e) => setFormData((prev) => ({ ...prev, contact_person: e.target.value }))} />
+            <Input id="phone" label="Phone *" value={formData.phone} onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))} required />
+            <Input id="email" label="Email" type="email" value={formData.email} onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))} />
+            <Input id="city" label="City" value={formData.city} onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))} />
+            <Input id="address" label="Address" value={formData.address} onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="submit" variant="primary" loading={saving}>{editingId ? "Update" : "Create"}</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
 
       <div className="mb-6 relative group max-w-md">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">

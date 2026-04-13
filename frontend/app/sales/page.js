@@ -14,6 +14,7 @@ export default function SalesHistoryPage() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [customerIdFilter, setCustomerIdFilter] = useState("");
 
   const fetchSales = async () => {
     setLoading(true);
@@ -32,10 +33,26 @@ export default function SalesHistoryPage() {
     fetchSales();
   }, []);
 
-  const filteredSales = sales.filter(s => 
-    s.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-    s.sale_id.toString().includes(search)
-  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setCustomerIdFilter(params.get("customer_id") || "");
+  }, []);
+
+  useEffect(() => {
+    if (customerIdFilter) {
+      setSearch(customerIdFilter);
+    }
+  }, [customerIdFilter]);
+
+  const filteredSales = sales.filter((s) => {
+    const matchesSearch =
+      s.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+      s.sale_id.toString().includes(search);
+
+    const matchesCustomer = !customerIdFilter || s.customer_id?.toString() === customerIdFilter;
+    return matchesSearch && matchesCustomer;
+  });
 
   const columns = [
     {

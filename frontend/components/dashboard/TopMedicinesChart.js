@@ -55,7 +55,7 @@ export default function TopMedicinesChart({ data = [], loading = false }) {
        </div>
 
        <div className="flex-1 w-full min-h-[280px] min-w-0">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280} debounce={80}>
             <BarChart 
               data={processedData} 
               layout="vertical"

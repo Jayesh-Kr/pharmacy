@@ -59,7 +59,7 @@ export default function InventoryPage() {
       header: "Action",
       className: "text-right",
       accessor: (row) => (
-        <Link href={`/purchases/add?medicine_id=${row.medicine_id}`} className="inline-flex items-center gap-1 text-blue-600 font-bold hover:underline no-underline">
+        <Link href={`/purchases?medicine_id=${row.medicine_id}`} className="inline-flex items-center gap-1 text-blue-600 font-bold hover:underline no-underline">
            Create Purchase <ArrowRight size={14} />
         </Link>
       )

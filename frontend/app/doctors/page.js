@@ -4,14 +4,26 @@ import { useEffect, useState } from "react";
 import DashboardContainer from "@/components/layout/DashboardContainer";
 import Table from "@/components/ui/Table";
 import Button from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import axiosInstance from "@/lib/axios";
 import { Plus, Search, Stethoscope, Phone, Award } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function DoctorsPage() {
+  const emptyForm = {
+    doctor_name: "",
+    specialization: "",
+    phone: "",
+    license_number: ""
+  };
+
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState(emptyForm);
 
   const fetchDoctors = async () => {
     setLoading(true);
@@ -28,6 +40,45 @@ export default function DoctorsPage() {
   useEffect(() => {
     fetchDoctors();
   }, []);
+
+  const openCreate = () => {
+    setEditingId(null);
+    setFormData(emptyForm);
+    setShowForm(true);
+  };
+
+  const openEdit = (row) => {
+    setEditingId(row.doctor_id);
+    setFormData({
+      doctor_name: row.doctor_name || "",
+      specialization: row.specialization || "",
+      phone: row.phone || "",
+      license_number: row.license_number || ""
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingId) {
+        await axiosInstance.put(`/doctors/${editingId}`, formData);
+        toast.success("Doctor updated");
+      } else {
+        await axiosInstance.post("/doctors", formData);
+        toast.success("Doctor added");
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setFormData(emptyForm);
+      fetchDoctors();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save doctor");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const filteredDoctors = doctors.filter(d => 
     d.doctor_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,7 +123,7 @@ export default function DoctorsPage() {
       className: "text-right",
       accessor: (row) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="secondary" size="sm">Edit</Button>
+          <Button variant="secondary" size="sm" onClick={() => openEdit(row)}>Edit</Button>
         </div>
       )
     }
@@ -88,8 +139,24 @@ export default function DoctorsPage() {
           </h1>
           <p className="text-gray-500 mt-1">Manage prescribing physicians and medical partners</p>
         </div>
-        <Button variant="primary" icon={Plus} size="md">Add Doctor</Button>
+        <Button variant="primary" icon={Plus} size="md" onClick={openCreate}>Add Doctor</Button>
       </div>
+
+      {showForm && (
+        <form onSubmit={handleSave} className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-lg font-bold text-gray-900">{editingId ? "Edit Doctor" : "Add New Doctor"}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input id="doctor_name" label="Doctor Name *" value={formData.doctor_name} onChange={(e) => setFormData((prev) => ({ ...prev, doctor_name: e.target.value }))} required />
+            <Input id="specialization" label="Specialization" value={formData.specialization} onChange={(e) => setFormData((prev) => ({ ...prev, specialization: e.target.value }))} />
+            <Input id="phone" label="Phone" value={formData.phone} onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))} />
+            <Input id="license_number" label="License Number" value={formData.license_number} onChange={(e) => setFormData((prev) => ({ ...prev, license_number: e.target.value }))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="submit" variant="primary" loading={saving}>{editingId ? "Update" : "Create"}</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
 
       <div className="mb-6 relative group max-w-md">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors">

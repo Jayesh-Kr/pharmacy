@@ -18,7 +18,7 @@ export default function DashboardContainer({ children }) {
         <div className="flex flex-col flex-1 w-full overflow-hidden min-h-screen pl-64 transition-all duration-300">
           <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
           
-          <main className="flex-1 overflow-y-auto pt-16 p-6 md:p-8">
+          <main className="flex-1 overflow-y-auto p-6 pt-24 md:p-8 md:pt-28">
             <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
               {children}
             </div>
