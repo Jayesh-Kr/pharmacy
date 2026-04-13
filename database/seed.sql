@@ -12,7 +12,7 @@ USE pharmacy_db;
 INSERT INTO users (username, password_hash, full_name, role, email, is_active)
 VALUES (
   'admin',
-  '$2b$10$kIqR3z2BQUv7x5HjXmTuJeGh4YJwY6Fv0OoP3E8nS9LtM1VkZG7B6',
+  '$2a$10$Ehtq4tRLmZNdKWwHfqj8h.OeEYHK6cSBhHD.o04a7PDnq.lb20wKS',
   'System Administrator',
   'admin',
   'admin@pharmacy.com',
@@ -26,7 +26,7 @@ VALUES (
 INSERT INTO users (username, password_hash, full_name, role, email, is_active)
 VALUES (
   'pharmacist1',
-  '$2b$10$9sGk2nC.7rRmHK5IpQ3uOO8uWQFThCBrm8bLZX5TvMdYpGjzEVim2',
+  '$2a$10$FZcjyu8l9SCvyMsyxjmG3.I7X5UxCz1gDG8Xwuw4M/UGQkwtLBm7C',
   'Riya Sharma',
   'pharmacist',
   'riya@pharmacy.com',

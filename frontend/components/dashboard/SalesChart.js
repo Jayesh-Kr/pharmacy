@@ -29,8 +29,24 @@ export default function SalesChart({ data = [], loading = false }) {
     revenue: parseFloat(item.revenue)
   }));
 
+  if (formattedData.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-[400px] min-w-0 flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 tracking-tight">Revenue Overview</h3>
+            <p className="text-sm text-gray-500">Daily sales performance (Last 7 days)</p>
+          </div>
+        </div>
+        <div className="flex-1 w-full min-h-[280px] min-w-0 flex items-center justify-center text-sm text-gray-500">
+          No sales data available yet.
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-[400px] flex flex-col">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-[400px] min-w-0 flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-bold text-gray-900 tracking-tight">Revenue Overview</h3>
@@ -41,7 +57,7 @@ export default function SalesChart({ data = [], loading = false }) {
         </div>
       </div>
 
-      <div className="flex-1 w-full">
+      <div className="flex-1 w-full min-h-[280px] min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData}>
             <defs>

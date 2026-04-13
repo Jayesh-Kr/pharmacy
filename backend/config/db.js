@@ -20,6 +20,17 @@ let pool = null;
 let promisePool = null;
 let initPromise = null;
 
+function getSchemaBootstrapSQL(fullSchemaSql) {
+  const triggerStartIndex = fullSchemaSql.indexOf('DROP TRIGGER IF EXISTS');
+  if (triggerStartIndex === -1) {
+    return fullSchemaSql;
+  }
+
+  // Trigger/procedure blocks in schema.sql use routine bodies and custom delimiters.
+  // mysql2 multi-statement execution does not support DELIMITER processing.
+  return fullSchemaSql.slice(0, triggerStartIndex);
+}
+
 function logConnectionError(err) {
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
     console.error('Database connection was closed.');
@@ -61,37 +72,40 @@ async function initializeDatabase() {
     try {
       const createDbSQL = `CREATE DATABASE IF NOT EXISTS ${mysql.escapeId(DB_NAME)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`;
       await setupConnection.promise().query(createDbSQL);
-      
+
       // Use the newly created database
       await setupConnection.promise().query(`USE \`${DB_NAME}\``);
-      
+
       // Safely read and execute schema and seed SQL
       try {
         const schemaPath = path.resolve(__dirname, '..', '..', 'database', 'schema.sql');
-        let schemaSql = fs.readFileSync(schemaPath, 'utf8');
-        try {
-           await setupConnection.promise().query(schemaSql);
-           console.log('Database schema checked/created successfully.');
-        } catch(e) {
-           console.error('Schema partial error (likely trigger syntax):', e.message);
-        }
-        
+        const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+        const bootstrapSchemaSql = getSchemaBootstrapSQL(schemaSql);
+        await setupConnection.promise().query(bootstrapSchemaSql);
+        console.log('Database schema checked/created successfully.');
+
         const seedPath = path.resolve(__dirname, '..', '..', 'database', 'seed.sql');
         let seedSql = fs.readFileSync(seedPath, 'utf8');
-        
+
         // Convert INSERT INTO to INSERT IGNORE INTO to prevent duplicates
         seedSql = seedSql.replace(/INSERT INTO/g, 'INSERT IGNORE INTO');
-        try {
-           await setupConnection.promise().query(seedSql);
-           console.log('Seed data inserted successfully.');
-        } catch(e) {
-           console.error('Seed partial error:', e.message);
-        }
-        
+        await setupConnection.promise().query(seedSql);
+
+        // Keep default login credentials deterministic across environments.
+        await setupConnection.promise().query(
+          `UPDATE users SET password_hash = ? WHERE username = 'admin'`,
+          ['$2a$10$Ehtq4tRLmZNdKWwHfqj8h.OeEYHK6cSBhHD.o04a7PDnq.lb20wKS']
+        );
+        await setupConnection.promise().query(
+          `UPDATE users SET password_hash = ? WHERE username = 'pharmacist1'`,
+          ['$2a$10$FZcjyu8l9SCvyMsyxjmG3.I7X5UxCz1gDG8Xwuw4M/UGQkwtLBm7C']
+        );
+
+        console.log('Seed data inserted successfully.');
       } catch (fileErr) {
         console.error('Error reading schema or seed files:', fileErr.message);
       }
-      
+
     } catch (err) {
       logConnectionError(err);
       throw err;

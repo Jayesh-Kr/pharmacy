@@ -22,13 +22,13 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 const getSalesChartData = asyncHandler(async (req, res) => {
   const [data] = await db.query(`
     SELECT 
-      DATE_FORMAT(sale_date, '%Y-%m-%d') AS sale_day, 
+      DATE(sale_date) AS sale_day,
       SUM(total_amount) AS revenue, 
       COUNT(*) AS total_sales
     FROM sales
     WHERE sale_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
     GROUP BY DATE(sale_date)
-    ORDER BY sale_day ASC;
+    ORDER BY DATE(sale_date) ASC;
   `);
 
   res.json(data);
