@@ -51,7 +51,7 @@ const createMedicine = asyncHandler(async (req, res) => {
 
   const [result] = await db.execute(
     `INSERT INTO medicines (
-      medicine_name, generic_name, category_id, supplier_id, config_unit,
+      medicine_name, generic_name, category_id, supplier_id, unit,
       purchase_price, selling_price, stock_quantity, reorder_level,
       expiry_date, description
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

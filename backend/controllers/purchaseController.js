@@ -56,12 +56,17 @@ const createPurchase = asyncHandler(async (req, res) => {
 // @route   GET /api/purchases
 // @access  Private
 const getPurchases = asyncHandler(async (req, res) => {
-  const [purchases] = await db.query(`
+  const isAdmin = req.user.role === 'admin';
+  const [purchases] = await db.query(
+    `
     SELECT p.*, s.supplier_name 
     FROM purchases p
     JOIN suppliers s ON p.supplier_id = s.supplier_id
+    ${isAdmin ? '' : 'WHERE p.created_by = ?'}
     ORDER BY p.purchase_date DESC
-  `);
+  `,
+    isAdmin ? [] : [req.user.username]
+  );
   res.json(purchases);
 });
 
@@ -71,13 +76,18 @@ const getPurchases = asyncHandler(async (req, res) => {
 const updatePurchaseStatus = asyncHandler(async (req, res) => {
     const { status } = req.body;
     const purchase_id = req.params.id;
+  const isAdmin = req.user.role === 'admin';
 
     if (!['Pending', 'Received', 'Cancelled'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status' });
     }
 
     // Check if current status is already 'Received'
-    const [current] = await db.execute('SELECT status FROM purchases WHERE purchase_id = ?', [purchase_id]);
+  const [current] = await db.execute(
+    `SELECT status, created_by FROM purchases WHERE purchase_id = ? ${isAdmin ? '' : 'AND created_by = ?'}`,
+    isAdmin ? [purchase_id] : [purchase_id, req.user.username]
+  );
+
     if (current.length === 0) {
         return res.status(404).json({ message: 'Purchase not found' });
     }
@@ -86,14 +96,34 @@ const updatePurchaseStatus = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Cannot change status once it is marked as Received' });
     }
 
-    // If changing to 'Received', execute the stored procedure for stock update
+    // If changing to 'Received', apply stock update in transaction
     if (status === 'Received' && current[0].status !== 'Received') {
+        const conn = await db.getConnection();
         try {
-            await db.query('CALL sp_receive_purchase(?)', [purchase_id]);
-            return res.json({ message: 'Purchase marked as Received and stock updated' });
+          await conn.beginTransaction();
+
+          const [items] = await conn.execute(
+            'SELECT medicine_id, quantity FROM purchase_items WHERE purchase_id = ?',
+            [purchase_id]
+          );
+
+          for (const item of items) {
+            await conn.execute(
+              'UPDATE medicines SET stock_quantity = stock_quantity + ? WHERE medicine_id = ?',
+              [item.quantity, item.medicine_id]
+            );
+          }
+
+          await conn.execute('UPDATE purchases SET status = ? WHERE purchase_id = ?', ['Received', purchase_id]);
+          await conn.commit();
+
+          return res.json({ message: 'Purchase marked as Received and stock updated' });
         } catch (error) {
-            console.error('Stock Update Procedure Error:', error);
-            return res.status(500).json({ message: 'Failed to update stock from purchase', error: error.message });
+          await conn.rollback();
+          console.error('Stock Update Transaction Error:', error);
+          return res.status(500).json({ message: 'Failed to update stock from purchase', error: error.message });
+        } finally {
+          conn.release();
         }
     } else {
         // Just update the status normally (e.g. to 'Cancelled' or if it stays 'Pending')

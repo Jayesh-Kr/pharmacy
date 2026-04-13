@@ -54,12 +54,17 @@ const createSale = asyncHandler(async (req, res) => {
 // @route   GET /api/sales
 // @access  Private
 const getSales = asyncHandler(async (req, res) => {
-  const [sales] = await db.query(`
+  const isAdmin = req.user.role === 'admin';
+  const query = `
     SELECT s.*, c.customer_name 
     FROM sales s
     JOIN customers c ON s.customer_id = c.customer_id
+    ${isAdmin ? '' : 'WHERE s.created_by = ?'}
     ORDER BY s.sale_date DESC
-  `);
+  `;
+  const params = isAdmin ? [] : [req.user.username];
+
+  const [sales] = await db.query(query, params);
   res.json(sales);
 });
 
@@ -68,14 +73,18 @@ const getSales = asyncHandler(async (req, res) => {
 // @access  Private
 const getSaleById = asyncHandler(async (req, res) => {
   const sale_id = req.params.id;
+  const isAdmin = req.user.role === 'admin';
 
   // Get sale header
-  const [sales] = await db.execute(`
+  const [sales] = await db.execute(
+    `
     SELECT s.*, c.customer_name, c.phone, c.address
     FROM sales s
     JOIN customers c ON s.customer_id = c.customer_id
-    WHERE s.sale_id = ?
-  `, [sale_id]);
+    WHERE s.sale_id = ? ${isAdmin ? '' : 'AND s.created_by = ?'}
+  `,
+    isAdmin ? [sale_id] : [sale_id, req.user.username]
+  );
 
   if (sales.length === 0) {
     return res.status(404).json({ message: 'Sale record not found' });
