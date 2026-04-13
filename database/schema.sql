@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS purchase_items (
 -- TRIGGER: Deduct stock after sale_item is inserted
 -- ============================================================
 DROP TRIGGER IF EXISTS trg_deduct_stock_after_sale;
-DELIMITER $$
+
 CREATE TRIGGER trg_deduct_stock_after_sale
 AFTER INSERT ON sale_items
 FOR EACH ROW
@@ -210,14 +210,14 @@ BEGIN
   UPDATE medicines
   SET stock_quantity = stock_quantity - NEW.quantity
   WHERE medicine_id = NEW.medicine_id;
-END$$
-DELIMITER ;
+END
+
 
 -- ============================================================
 -- TRIGGER: Restore stock if a sale is deleted (rollback)
 -- ============================================================
 DROP TRIGGER IF EXISTS trg_restore_stock_after_sale_delete;
-DELIMITER $$
+
 CREATE TRIGGER trg_restore_stock_after_sale_delete
 AFTER DELETE ON sale_items
 FOR EACH ROW
@@ -225,15 +225,15 @@ BEGIN
   UPDATE medicines
   SET stock_quantity = stock_quantity + OLD.quantity
   WHERE medicine_id = OLD.medicine_id;
-END$$
-DELIMITER ;
+END
+
 
 -- ============================================================
 -- TRIGGER: Add stock when purchase status changes to 'Received'
 -- (Handled in application layer via stored procedure below)
 -- ============================================================
 DROP PROCEDURE IF EXISTS sp_receive_purchase;
-DELIMITER $$
+
 CREATE PROCEDURE sp_receive_purchase(IN p_purchase_id INT)
 BEGIN
   DECLARE done INT DEFAULT FALSE;
@@ -261,5 +261,5 @@ BEGIN
   UPDATE purchases SET status = 'Received' WHERE purchase_id = p_purchase_id;
 
   COMMIT;
-END$$
-DELIMITER ;
+END
+
