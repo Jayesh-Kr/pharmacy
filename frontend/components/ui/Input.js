@@ -26,7 +26,7 @@ const Input = ({
         id={id}
         type={type}
         className={cn(
-          "block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 placeholder:text-gray-400 font-medium",
+          "block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-black transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 placeholder:text-black font-medium",
           error && "border-red-500 focus:ring-red-500",
           className
         )}
@@ -55,7 +55,7 @@ const Select = ({
       <select
         id={id}
         className={cn(
-          "block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 font-medium appearance-none cursor-pointer",
+          "block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-black transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 font-medium appearance-none cursor-pointer",
           error && "border-red-500 focus:ring-red-500",
           className
         )}
@@ -90,7 +90,7 @@ const TextArea = ({
       <textarea
         id={id}
         className={cn(
-          "block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 placeholder:text-gray-400 font-medium min-h-[100px]",
+          "block w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-black transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 placeholder:text-black font-medium min-h-25",
           error && "border-red-500 focus:ring-red-500",
           className
         )}
